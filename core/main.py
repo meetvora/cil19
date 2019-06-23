@@ -57,7 +57,8 @@ def train(model: nn.Module, dataset: Dataset,
                 logger.info(f'Classwise IoU')
                 for met in beautify(metrics[1]):
                     logger.info(f'{met}')
-                print("\n")
+                logger.info("\n")
+
             overall_iter += 1
             if config.SAVE_ITER_FREQ and overall_iter % config.SAVE_ITER_FREQ == 0:
                 torch.save(
@@ -78,6 +79,10 @@ def evaluate(model: nn.Module,
     logger.info("[+] Evaluating model...")
 
     imgize = torchvision.transforms.ToPILImage()
+    SAVE_DIR = "%s_%s" % (config.LOG_NAME[:-4], model.__class__.__name__)
+    if not os.path.isdir(SAVE_DIR):
+        os.mkdir(SAVE_DIR)
+
     with torch.no_grad():
         model.eval()
         for batch_idx, samples in enumerate(loader):
@@ -89,11 +94,8 @@ def evaluate(model: nn.Module,
             for mask, path in zip(output_mask, raw_path):
                 _mask = torch.where(mask == 1, torch.ones_like(mask) * 255, torch.zeros_like(mask)).byte()
                 _mask = imgize(_mask.cpu())
-                _path = path.split("/")
-                _path[-1] = "mask_" + _path[-1]
-                _path[-2] = "exp"
-                _path[0] = "/" + _path[0]
-                _mask.save("/".join(_path))
+                filename = os.path.basename(path)
+                _mask.save(os.path.join(SAVE_DIR, filename))
 
 def main():
     model = config.MODEL
