@@ -50,13 +50,14 @@ def train(model: nn.Module, dataset: Dataset,
 
             if batch_idx % config.PRINT_BATCH_FREQ == 0:
                 metrics = evaluation()
-                logger.info(
-                    f'Train Epoch: {epoch} [{batch_idx}]\Batch loss: {batch_loss.item():.6f}\
-                    \tOverall loss: {overall_loss:.6f}'
-                )
-                logger.info(
-                    f'Overall metrics: {beautify(metrics[0])}\nClasswise\n{beautify(metrics[1])}'
-                )
+                logger.info(f'Train Epoch: {epoch}, {batch_idx}')
+                logger.info(f'Batch loss: {batch_loss.item():.6f}, Overall loss: {overall_loss:.6f}')
+                for met in beautify(metrics[0]):
+                    logger.info(f'{met}')
+                logger.info(f'Classwise IoU')
+                for met in beautify(metrics[1]):
+                    logger.info(f'{met}')
+                print("\n")
             overall_iter += 1
             if config.SAVE_ITER_FREQ and overall_iter % config.SAVE_ITER_FREQ == 0:
                 torch.save(
@@ -90,6 +91,7 @@ def evaluate(model: nn.Module,
                 _mask = imgize(_mask.cpu())
                 _path = path.split("/")
                 _path[-1] = "mask_" + _path[-1]
+                _path[-2] = "exp"
                 _path[0] = "/" + _path[0]
                 _mask.save("/".join(_path))
 

@@ -3,7 +3,7 @@ import logging
 
 
 def beautify(dictionary: Dict) -> str:
-    return "\n".join([f'{key}\t: {val}' for key, val in dictionary.items()])
+    return [f'{key}\t: {val}' for key, val in dictionary.items()]
 
 
 def device(tensors: List, gpu: bool = False, numpy: bool = False):

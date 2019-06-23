@@ -35,9 +35,9 @@ class ConfusionMatrix(object):
         cls_iu = dict(zip(range(self.n_classes), iu))
         return (
             {
-                "Overall Acc:": accuracy,
-                "Mean Acc:": acc_cls,
-                "FreqW Acc:": fwavacc,
+                "Overall Accuracy:": accuracy,
+                "Mean Accuracy:": acc_cls,
+                "FreqW Accuracy:": fwavacc,
                 "Mean IoU:": mean_iu,
             },
             cls_iu,

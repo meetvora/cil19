@@ -18,7 +18,7 @@ SAVE_ITER_FREQ = None
 EVALUATE_ITER_FREQ = 100
 VISUALIZE_ITER_FREQ = 10
 
-MODEL = deeplab.model
+MODEL = fcn.model
 if USE_GPU:
     MODEL = MODEL.cuda()
 
@@ -31,13 +31,13 @@ TRAIN = Task({
     'MASK_DIR': "training/groundtruth",
     'BATCH_SIZE': 2,
     'SHUFFLE': True,
-    'OPTIMIZER': "Adam",
+    'OPTIMIZER': "Adagrad",
     'OPTIM_PARAMS': {
         'lr': 1e-4,
         'weight_decay': 0,
     },
     'LOSS': "cross_entropy",
-    'NUM_EPOCHS': 500
+    'NUM_EPOCHS': 120
 })
 
 TEST = Task({
