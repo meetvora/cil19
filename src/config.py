@@ -18,7 +18,7 @@ SAVE_ITER_FREQ = None
 EVALUATE_ITER_FREQ = 100
 VISUALIZE_ITER_FREQ = 10
 
-MODEL = fcn.model
+MODEL = fcn.get_model(pretrained=True)
 if USE_GPU:
     MODEL = MODEL.cuda()
 
@@ -46,8 +46,8 @@ TEST = Task({
     'IMAGE_DIR': "test_images",
     'BATCH_SIZE': 2,
     'SHUFFLE': False,
-    'LOSS': "cross_entropy",  
-    })
+    'LOSS': "cross_entropy",
+})
 
 BRANCH = subprocess.check_output(["git", "rev-parse", "--abbrev-ref",
                                   "HEAD"]).strip().decode("utf-8")
@@ -57,9 +57,12 @@ NAME = "%s-%s-%s" % (BRANCH, TRAIN.OPTIMIZER, TRAIN.BATCH_SIZE)
 LOG_PATH = "../log/%s" % BRANCH
 LOG_NAME = os.path.join(
     LOG_PATH, f"{datetime.datetime.now().strftime('%d-%m--%H-%M')}.log")
+OUT_PATH = "%s_%s" % (LOG_NAME[:-4], MODEL.__class__.__name__)
 
 if not os.path.isdir(LOG_PATH):
     os.mkdir(LOG_PATH)
+if not os.path.isdir(OUT_PATH):
+    os.mkdir(OUT_PATH)
 
 logFormatter = "%(asctime)s - [%(levelname)s] %(message)s"
 

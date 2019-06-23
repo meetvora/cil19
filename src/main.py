@@ -27,8 +27,9 @@ def train(model: nn.Module, dataset: Dataset,
                         batch_size=dataset.BATCH_SIZE,
                         shuffle=dataset.BATCH_SIZE)
 
-    optimizer = getattr(torch.optim, config.TRAIN.OPTIMIZER)(model.parameters(),
-                                                       **config.TRAIN.OPTIM_PARAMS)
+    optimizer = getattr(torch.optim,
+                        config.TRAIN.OPTIMIZER)(model.parameters(),
+                                                **config.TRAIN.OPTIM_PARAMS)
     overall_iter = 0
     evaluation = ConfusionMatrix(dataset.get_num_class())
 
@@ -36,7 +37,8 @@ def train(model: nn.Module, dataset: Dataset,
     for epoch in range(config.TRAIN.NUM_EPOCHS):
         total_loss = 0
         for batch_idx, samples in enumerate(loader):
-            images, target = device([samples['image'], samples['mask']], gpu=config.USE_GPU)
+            images, target = device([samples['image'], samples['mask']],
+                                    gpu=config.USE_GPU)
             outputs = model(images)['out']
             output_mask = outputs.argmax(1)
 
@@ -51,7 +53,9 @@ def train(model: nn.Module, dataset: Dataset,
             if batch_idx % config.PRINT_BATCH_FREQ == 0:
                 metrics = evaluation()
                 logger.info(f'Train Epoch: {epoch}, {batch_idx}')
-                logger.info(f'Batch loss: {batch_loss.item():.6f}, Overall loss: {overall_loss:.6f}')
+                logger.info(
+                    f'Batch loss: {batch_loss.item():.6f}, Overall loss: {overall_loss:.6f}'
+                )
                 for met in beautify(metrics[0]):
                     logger.info(f'{met}')
                 logger.info(f'Classwise IoU')
@@ -66,6 +70,7 @@ def train(model: nn.Module, dataset: Dataset,
                     os.path.join(config.LOG_PATH,
                                  config.NAME + f"-iter={overall_iter}"))
 
+
 def evaluate(model: nn.Module,
              dataset: Dataset,
              pretrained: bool = False,
@@ -79,9 +84,6 @@ def evaluate(model: nn.Module,
     logger.info("[+] Evaluating model...")
 
     imgize = torchvision.transforms.ToPILImage()
-    SAVE_DIR = "%s_%s" % (config.LOG_NAME[:-4], model.__class__.__name__)
-    if not os.path.isdir(SAVE_DIR):
-        os.mkdir(SAVE_DIR)
 
     with torch.no_grad():
         model.eval()
@@ -92,28 +94,29 @@ def evaluate(model: nn.Module,
             output_mask = outputs.argmax(1)
 
             for mask, path in zip(output_mask, raw_path):
-                _mask = torch.where(mask == 1, torch.ones_like(mask) * 255, torch.zeros_like(mask)).byte()
+                _mask = torch.where(mask == 1,
+                                    torch.ones_like(mask) * 255,
+                                    torch.zeros_like(mask)).byte()
                 _mask = imgize(_mask.cpu())
                 filename = os.path.basename(path)
-                _mask.save(os.path.join(SAVE_DIR, filename))
+                _mask.save(os.path.join(config.OUT_PATH, filename))
+    logger.info("[+] Done.")
+
 
 def main():
     model = config.MODEL
-    augmentation = [
-        torchvision.transforms.ColorJitter(0.25, 0.25, 0.25, 0.25)
-    ]
-    paired_augmentation = [
-        "crop",
-        "hflip",
-        "vflip",
-        "rotate"
-    ]
+    augmentation = [torchvision.transforms.ColorJitter(0.25, 0.25, 0.25, 0.25)]
+    paired_augmentation = ["crop", "hflip", "vflip", "rotate"]
 
-    dataset = config.DATASET(task=config.TRAIN, normalize=True, image_transforms=augmentation, pair_transforms=paired_augmentation)
+    dataset = config.DATASET(task=config.TRAIN,
+                             normalize=True,
+                             image_transforms=augmentation,
+                             pair_transforms=paired_augmentation)
     test_dataset = config.DATASET(task=config.TEST, normalize=True)
-    
+
     train(model, dataset, dataset)
     evaluate(model, test_dataset)
+
 
 if __name__ == "__main__":
     main()

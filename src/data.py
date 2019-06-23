@@ -18,7 +18,8 @@ from utils.type import Task
 class _MaskedDataset(Dataset):
     """Special abstract Dataset where images and masks are stored in separate dir with same names"""
 
-    def __init__(self, task: Task, normalize: bool, image_transforms: List, pair_transforms: List[str]) -> None:
+    def __init__(self, task: Task, normalize: bool, image_transforms: List,
+                 pair_transforms: List[str]) -> None:
         """User should call set_paths() before evoking super's __init__"""
         preprocess = [transf.ToTensor()]
         if normalize:
@@ -26,7 +27,8 @@ class _MaskedDataset(Dataset):
                 transf.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225]))
         self.normalize = transf.Compose(preprocess)
-        self.image_transforms = transf.Compose(image_transforms) if image_transforms else None
+        self.image_transforms = transf.Compose(
+            image_transforms) if image_transforms else None
         self.pair_transforms = pair_transforms
 
         if task.setting == "train":
@@ -50,8 +52,7 @@ class _MaskedDataset(Dataset):
         image = Image.open(raw_path)
 
         if self.setting == "test":
-            return {'image': self.normalize(image),
-                    'raw_path': raw_path}
+            return {'image': self.normalize(image), 'raw_path': raw_path}
 
         mask = Image.open(self.mask_paths[idx])
 
@@ -78,8 +79,8 @@ class _MaskedDataset(Dataset):
         if "crop" in self.pair_transforms and coin_flip():
             resize = transf.Resize(size=(450, 450))
             image, mask = resize(image), resize(mask)
-            i, j, h, w = transf.RandomCrop.get_params(
-                image, output_size=(400, 400))
+            i, j, h, w = transf.RandomCrop.get_params(image,
+                                                      output_size=(400, 400))
             image, mask = TF.crop(image, i, j, h, w), TF.crop(mask, i, j, h, w)
 
         if "hflip" in self.pair_transforms and coin_flip():
@@ -114,9 +115,14 @@ class _MaskedDataset(Dataset):
 
 
 class AerialDataset(_MaskedDataset):
-    def __init__(self, task: Task, normalize: bool = True, image_transforms: List = [], pair_transforms: List = []):
+    def __init__(self,
+                 task: Task,
+                 normalize: bool = True,
+                 image_transforms: List = [],
+                 pair_transforms: List = []):
         self.set_paths(task)
-        super(AerialDataset, self).__init__(task, normalize, image_transforms, pair_transforms)
+        super(AerialDataset, self).__init__(task, normalize, image_transforms,
+                                            pair_transforms)
 
     def set_paths(self, task):
         IMAGE_DIR = os.path.join(task.ROOT_DIR, task.IMAGE_DIR)
@@ -133,7 +139,8 @@ class AerialDataset(_MaskedDataset):
             ])
 
     def mask_postprocess(self, mask: torch.Tensor) -> torch.Tensor:
-        return torch.where(mask > 0.75, torch.ones_like(mask), torch.zeros_like(mask)).long()
+        return torch.where(mask > 0.75, torch.ones_like(mask),
+                           torch.zeros_like(mask)).long()
 
     def get_colormap(self) -> Dict:
         return {0: (0, 0, 0), 1: (255, 255, 255)}
