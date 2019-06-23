@@ -29,7 +29,7 @@ class Task(object):
             "LOSS"] in Loss.implemented, f"{kwargs['LOSS']} Loss not implemented."
         if "OPTIMIZER" in kwargs:
             assert kwargs["OPTIMIZER"] in [
-                attr for attr in dir(torch.optim) if attr.istitle()
+                attr for attr in dir(torch.optim) if "__" not in attr
             ], "Unsupported optimizer."
 
         for arg in kwargs:

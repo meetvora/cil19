@@ -3,22 +3,22 @@ import torch
 import os
 import numpy as np
 import ipdb
+import math
 import torch.nn as nn
 import torch.nn.functional as F
-import math
 from torchvision import transforms as transf
+import torchvision.transforms.functional as TF
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 from typing import List, Dict
 
 from utils.type import Task
-from utils.labels import cityscape, mapillary
 
 
 class _MaskedDataset(Dataset):
     """Special abstract Dataset where images and masks are stored in separate dir with same names"""
 
-    def __init__(self, task: Task, normalize: bool, transforms: List, mask_transforms: List) -> None:
+    def __init__(self, task: Task, normalize: bool, image_transforms: List, pair_transforms: List[str]) -> None:
         """User should call set_paths() before evoking super's __init__"""
         preprocess = [transf.ToTensor()]
         if normalize:
@@ -26,8 +26,8 @@ class _MaskedDataset(Dataset):
                 transf.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225]))
         self.normalize = transf.Compose(preprocess)
-        self.transforms = None
-        self.mask_transforms = None
+        self.image_transforms = transf.Compose(image_transforms) if image_transforms else None
+        self.pair_transforms = pair_transforms
 
         if task.setting == "train":
             assert len(self.image_paths) == len(
@@ -37,13 +37,6 @@ class _MaskedDataset(Dataset):
 
             self.image_paths.sort()
             self.mask_paths.sort()
-
-            if transforms:
-                self.transforms = transf.Compose(transforms)
-                for i, flag in enumerate(mask_transforms):
-                    if flag == 1:
-                        self.mask_transforms.append(transforms[i])
-                self.mask_transforms = transf.Compose(self.mask_transforms)
 
         for attr in task.attributes:
             if hasattr(task, attr):
@@ -56,20 +49,50 @@ class _MaskedDataset(Dataset):
         raw_path = self.image_paths[idx]
         image = Image.open(raw_path)
 
+        if self.setting == "test":
+            return {'image': self.normalize(image),
+                    'raw_path': raw_path}
+
         mask = Image.open(self.mask_paths[idx])
-        mask = np.asarray(mask)
-        
+
+        if self.image_transforms is not None:
+            image = self.image_transforms(image)
+
         p = np.random.rand(1)
-        if self.transforms is not None and p >= 0.5:
-            image = self.transforms(image)
-            mask = self.mask_transforms(mask)
+        if p >= 0.5:
+            image, mask = self._transform(image, mask)
 
         image = self.normalize(image)
+        mask = TF.to_tensor(mask)
+
         return {
             'image': image,
             'mask': self.mask_postprocess(mask),
             'raw_path': raw_path
         }
+
+    def _transform(self, image, mask):
+        def coin_flip():
+            return np.random.rand(1) >= 0.5
+
+        if "crop" in self.pair_transforms and coin_flip():
+            resize = transf.Resize(size=(450, 450))
+            image, mask = resize(image), resize(mask)
+            i, j, h, w = transf.RandomCrop.get_params(
+                image, output_size=(400, 400))
+            image, mask = TF.crop(image, i, j, h, w), TF.crop(mask, i, j, h, w)
+
+        if "hflip" in self.pair_transforms and coin_flip():
+            image, mask = TF.hflip(image), TF.hflip(mask)
+
+        if "vflip" in self.pair_transforms and coin_flip():
+            image, mask = TF.vflip(image), TF.vflip(mask)
+
+        if "rotate" in self.pair_transforms and coin_flip():
+            angle = (np.random.rand(1) - 0.5) * 30
+            image, mask = TF.rotate(image, angle), TF.rotate(mask, angle)
+
+        return image, mask
 
     @abc.abstractmethod
     def set_paths(self, task: Task) -> None:
@@ -77,7 +100,7 @@ class _MaskedDataset(Dataset):
         return
 
     @abc.abstractmethod
-    def mask_postprocess(self, mask: np.ndarray) -> np.ndarray:
+    def mask_postprocess(self, mask: torch.Tensor) -> torch.Tensor:
         """Middleware method to process mask files before returning to trainer"""
         return
 
@@ -87,99 +110,13 @@ class _MaskedDataset(Dataset):
         return
 
     def get_num_class(self) -> int:
-        mask = self.__getitem__(0)['mask']
-        return mask.max() + 1
+        return self.__getitem__(0)['mask'].max().item() + 1
 
-
-class CityScapeDataset(_MaskedDataset):
-    def __init__(self,
-                 task: Task,
-                 normalize: bool = True,
-                 transforms: List = [],
-                 use_trainId: bool = True) -> None:
-
-        self.set_paths(task)
-        super(CityScapeDataset, self).__init__(task, normalize, transforms)
-        void_classes = [
-            label.id for label in cityscape.labels if label.category == "void"
-        ]
-        self.max_void_label = max(void_classes)
-        self.mask_postprocess = self._translate_to_trainId if use_trainId else self._remove_void_labels
-
-    def set_paths(self, task):
-        validator = lambda u: "._" not in u
-        mask_validator = lambda u: "_labelIds.png" in u and validator(u)
-
-        IMAGE_DIR = os.path.join(task.ROOT_DIR, task.IMAGE_DIR)
-        cities = [city for city in os.listdir(IMAGE_DIR) if validator(city)]
-        self.image_paths = list()
-        for city in cities:
-            localpath = os.path.join(IMAGE_DIR, city)
-            self.image_paths += [
-                os.path.join(localpath, filename)
-                for filename in os.listdir(localpath) if validator(filename)
-            ]
-        self.image_paths = np.asarray(self.image_paths).flatten()
-
-        MASK_DIR = os.path.join(task.ROOT_DIR, task.MASK_DIR)
-        self.mask_paths = list()
-        for city in cities:
-            localpath = os.path.join(MASK_DIR, city)
-            self.mask_paths += [
-                os.path.join(localpath, filename)
-                for filename in os.listdir(localpath)
-                if mask_validator(filename)
-            ]
-        self.mask_paths = np.asarray(self.mask_paths).flatten()
-
-    def _remove_void_labels(self, mask: np.ndarray) -> np.ndarray:
-        """reduces all 'void' category labels to single class '0'"""
-        mask = np.where(mask <= self.max_void_label, self.max_void_label, mask)
-        mask = mask - self.max_void_label
-        return mask
-
-    def _translate_to_trainId(self, mask: np.ndarray) -> np.ndarray:
-        """maps 35 classes to 19"""
-        for id, trainId in cityscape.id2trainId.items():
-            mask = np.where(mask == id, trainId, mask)
-        mask = np.where((mask == 255) | (mask == -1), 19, mask)
-        return mask
-
-    def get_colormap(self):
-        return {label.trainId: label.color for label in cityscape.labels}
-
-
-class MapillaryDataset(_MaskedDataset):
-    def __init__(self,
-                 task: Task,
-                 normalize: bool = True,
-                 transforms: List = []) -> None:
-        self.set_paths(task)
-        super(MapillaryDataset, self).__init__(task, normalize, transforms)
-
-    def set_paths(self, task: Task) -> None:
-        IMAGE_DIR = os.path.join(task.ROOT_DIR, task.IMAGE_DIR)
-        self.image_paths = np.asarray([
-            os.path.join(IMAGE_DIR, filename)
-            for filename in os.listdir(IMAGE_DIR)
-        ])
-
-        MASK_DIR = os.path.join(task.ROOT_DIR, task.MASK_DIR)
-        self.mask_paths = np.asarray([
-            os.path.join(MASK_DIR, filename)
-            for filename in os.listdir(MASK_DIR)
-        ])
-
-    def mask_postprocess(self, mask: np.ndarray) -> np.ndarray:
-        return mask
-
-    def get_colormap(self) -> Dict:
-        return mapillary.labels2color
 
 class AerialDataset(_MaskedDataset):
-    def __init__(self, task: Task, normalize: bool = True, transforms: List = [], mask_transforms: List = []):
+    def __init__(self, task: Task, normalize: bool = True, image_transforms: List = [], pair_transforms: List = []):
         self.set_paths(task)
-        super(AerialDataset, self).__init__(task, normalize, transforms, mask_transforms)
+        super(AerialDataset, self).__init__(task, normalize, image_transforms, pair_transforms)
 
     def set_paths(self, task):
         IMAGE_DIR = os.path.join(task.ROOT_DIR, task.IMAGE_DIR)
@@ -195,8 +132,8 @@ class AerialDataset(_MaskedDataset):
                 for filename in os.listdir(MASK_DIR)
             ])
 
-    def mask_postprocess(self, mask: np.ndarray) -> np.ndarray:
-        return np.where(mask > 0, 1, 0)
+    def mask_postprocess(self, mask: torch.Tensor) -> torch.Tensor:
+        return torch.where(mask > 0.75, torch.ones_like(mask), torch.zeros_like(mask)).long()
 
     def get_colormap(self) -> Dict:
         return {0: (0, 0, 0), 1: (255, 255, 255)}

@@ -1,8 +1,9 @@
 import os
 import numpy as np
-import torch
 import logging
 import ipdb
+import torch
+import torchvision
 from torch import nn
 from torch.utils.data import Dataset, DataLoader
 
@@ -28,20 +29,18 @@ def train(model: nn.Module, dataset: Dataset,
 
     optimizer = getattr(torch.optim, config.TRAIN.OPTIMIZER)(model.parameters(),
                                                        **config.TRAIN.OPTIM_PARAMS)
-    # loss = Loss(config.TRAIN.LOSS)
     overall_iter = 0
     evaluation = ConfusionMatrix(dataset.get_num_class())
 
+    model.train()
     for epoch in range(config.TRAIN.NUM_EPOCHS):
         total_loss = 0
         for batch_idx, samples in enumerate(loader):
-            images, target = samples['image'], samples['mask']
-            if config.USE_GPU:
-              images, target = images.cuda(), target.cuda()
+            images, target = device([samples['image'], samples['mask']], gpu=config.USE_GPU)
             outputs = model(images)['out']
             output_mask = outputs.argmax(1)
 
-            batch_loss = Loss.cross_entropy2D(outputs, target.long())
+            batch_loss = Loss.cross_entropy2D(outputs, target)
             total_loss += batch_loss.item()
             overall_loss = total_loss / ((batch_idx + 1))
             evaluation.update(output_mask, target)
@@ -64,9 +63,6 @@ def train(model: nn.Module, dataset: Dataset,
                     model.state_dict(),
                     os.path.join(config.LOG_PATH,
                                  config.NAME + f"-iter={overall_iter}"))
-            if config.EVALUATE_ITER_FREQ and overall_iter % config.EVALUATE_ITER_FREQ == 0:
-                evaluate(model, validate_data)
-
 
 def evaluate(model: nn.Module,
              dataset: Dataset,
@@ -80,42 +76,40 @@ def evaluate(model: nn.Module,
             torch.load(os.path.join(config.LOG_PATH, config.NAME)))
     logger.info("[+] Evaluating model...")
 
-    total_loss = 0
-    evaluation = ConfusionMatrix(dataset.get_num_class())
-
+    imgize = torchvision.transforms.ToPILImage()
     with torch.no_grad():
         model.eval()
         for batch_idx, samples in enumerate(loader):
-            (images, target), raw_path = device(
-                [samples['image'], samples['mask']],
-                gpu=config.USE_GPU), samples['raw_path']
+            images, raw_path = device(
+                [samples['image']], gpu=config.USE_GPU)[0], samples['raw_path']
             outputs = model(images)['out']
             output_mask = outputs.argmax(1)
 
-            batch_loss = Loss.cross_entropy2D(outputs, target.long())
-            total_loss += batch_loss.item()
-            overall_loss = total_loss / ((batch_idx + 1))
-            evaluation.update(output_mask, target)
-
-            if batch_idx % config.PRINT_BATCH_FREQ == 0:
-                metrics = evaluation()
-                logger.info(
-                    f'Validation loss (batchwise): {batch_loss.item():.6f}\t\
-                    Overall loss: {overall_loss:.6f}')
-                logger.info(
-                    f'Overall metrics: {beautify(metrics[0])}\nClasswise\n{beautify(metrics[1])}'
-                )
-
-            if visualizer and batch_idx % config.VISUALIZE_ITER_FREQ == 0:
-                ipdb.set_trace()
-                visualizer(mask=output_mask[0], raw_image=raw_path[0])
+            for mask, path in zip(output_mask, raw_path):
+                _mask = torch.where(mask == 1, torch.ones_like(mask) * 255, torch.zeros_like(mask)).byte()
+                _mask = imgize(_mask.cpu())
+                _path = path.split("/")
+                _path[-1] = "mask_" + _path[-1]
+                _path[0] = "/" + _path[0]
+                _mask.save("/".join(_path))
 
 def main():
     model = config.MODEL
-    dataset = config.DATASET(task=config.TRAIN, normalize=True)
+    augmentation = [
+        torchvision.transforms.ColorJitter(0.25, 0.25, 0.25, 0.25)
+    ]
+    paired_augmentation = [
+        "crop",
+        "hflip",
+        "vflip",
+        "rotate"
+    ]
+
+    dataset = config.DATASET(task=config.TRAIN, normalize=True, image_transforms=augmentation, pair_transforms=paired_augmentation)
     test_dataset = config.DATASET(task=config.TEST, normalize=True)
     
     train(model, dataset, dataset)
+    evaluate(model, test_dataset)
 
 if __name__ == "__main__":
     main()

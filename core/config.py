@@ -1,14 +1,13 @@
 import torch
-import models
 import os
 import subprocess
 import datetime
 import logging
 import sys
 
-from models import deeplab
+from models import deeplab, fcn
 from utils.type import Task
-from data import CityScapeDataset, MapillaryDataset, AerialDataset
+from data import AerialDataset
 
 PRODUCTION = False
 USE_GPU = True
@@ -27,41 +26,31 @@ DATASET = AerialDataset
 
 TRAIN = Task({
     'setting': "train",
-    'ROOT_DIR': "/home/spyd3/code/cil",
+    'ROOT_DIR': "/cluster/home/voram/cil19/data",
     'IMAGE_DIR': "training/images",
     'MASK_DIR': "training/groundtruth",
     'BATCH_SIZE': 2,
     'SHUFFLE': True,
     'OPTIMIZER': "Adam",
     'OPTIM_PARAMS': {
-        'lr': 1e-3,
-        'weight_decay': 0.0,
+        'lr': 1e-4,
+        'weight_decay': 0,
     },
     'LOSS': "cross_entropy",
-    'NUM_EPOCHS': 5
-})
-
-VAL = Task({
-    'setting': "val",
-    'ROOT_DIR': "/home/spyd3/foureighty/cityscapes",
-    'IMAGE_DIR': "leftImg8bit_trainvaltest/leftImg8bit/val",
-    'MASK_DIR': "gtFine_trainvaltest/gtFine/val",
-    'BATCH_SIZE': 2,
-    'SHUFFLE': False,
-    'LOSS': "cross_entropy",
+    'NUM_EPOCHS': 500
 })
 
 TEST = Task({
     'setting': "test",
-    'ROOT_DIR': "/home/spyd3/code/cil",
-    'IMAGE_DIR': "test_images/",
+    'ROOT_DIR': "/cluster/home/voram/cil19/data",
+    'IMAGE_DIR': "test_images",
     'BATCH_SIZE': 2,
     'SHUFFLE': False,
     'LOSS': "cross_entropy",  
     })
 
-BRANCH = "master" #subprocess.check_output(["git", "rev-parse", "--abbrev-ref",
-                  #                "HEAD"]).strip().decode("utf-8")
+BRANCH = subprocess.check_output(["git", "rev-parse", "--abbrev-ref",
+                                  "HEAD"]).strip().decode("utf-8")
 NAME = "%s-%s-%s" % (BRANCH, TRAIN.OPTIMIZER, TRAIN.BATCH_SIZE)
 
 LOG_PATH = "./log/%s" % BRANCH
