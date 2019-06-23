@@ -34,10 +34,10 @@ TRAIN = Task({
     'OPTIMIZER': "Adam",
     'OPTIM_PARAMS': {
         'lr': 1e-4,
-        'weight_decay': 0,
+        'weight_decay': 5e-4,
     },
     'LOSS': "cross_entropy",
-    'NUM_EPOCHS': 125
+    'NUM_EPOCHS': 200
 })
 
 TEST = Task({
@@ -56,7 +56,7 @@ NAME = "%s-%s-%s" % (BRANCH, TRAIN.OPTIMIZER, TRAIN.BATCH_SIZE)
 # Logging configuration
 LOG_PATH = "../log/%s" % BRANCH
 LOG_NAME = os.path.join(
-    LOG_PATH, f"{datetime.datetime.now().strftime('%d-%m--%H-%M')}.log")
+    LOG_PATH, f"{NAME}-{datetime.datetime.now().strftime('%d-%m--%H-%M')}.log")
 OUT_PATH = "%s_%s" % (LOG_NAME[:-4], MODEL.__class__.__name__)
 
 if not os.path.isdir(LOG_PATH):

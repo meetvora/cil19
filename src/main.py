@@ -47,6 +47,7 @@ def train(model: nn.Module, dataset: Dataset,
             overall_loss = total_loss / ((batch_idx + 1))
             evaluation.update(output_mask, target)
 
+            optimizer.zero_grad()
             batch_loss.backward()
             optimizer.step()
 
