@@ -60,8 +60,7 @@ class _MaskedDataset(Dataset):
             image = self.image_transforms(image)
 
         p = np.random.rand(1)
-        if p >= 0.5:
-            image, mask = self._transform(image, mask)
+        image, mask = self._transform(image, mask)
 
         image = self.normalize(image)
         mask = TF.to_tensor(mask)

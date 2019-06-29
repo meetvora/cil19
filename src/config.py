@@ -5,7 +5,7 @@ import datetime
 import logging
 import sys
 
-from models import deeplab, fcn
+from models import deeplab, fcn, ensemble
 from utils.type import Task
 from data import AerialDataset
 
@@ -18,7 +18,7 @@ SAVE_ITER_FREQ = None
 EVALUATE_ITER_FREQ = 100
 VISUALIZE_ITER_FREQ = 10
 
-MODEL = fcn.get_model(pretrained=True)
+MODEL = fcn.get_model(pretrained=True, resnet=101)
 if USE_GPU:
     MODEL = MODEL.cuda()
 
@@ -34,10 +34,10 @@ TRAIN = Task({
     'OPTIMIZER': "Adam",
     'OPTIM_PARAMS': {
         'lr': 1e-4,
-        'weight_decay': 5e-4,
+        'weight_decay': 0,
     },
     'LOSS': "cross_entropy",
-    'NUM_EPOCHS': 200
+    'NUM_EPOCHS': 100
 })
 
 TEST = Task({

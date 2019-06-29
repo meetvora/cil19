@@ -7,7 +7,7 @@ class Loss(object):
     implemented = ["cross_entropy"]
 
     @staticmethod
-    def cross_entropy2D(input, target):
+    def cross_entropy2D(input, target, avg=True):
         target = torch.squeeze(target)
         (N, C, H, W) = input.size()
         (Nt, Ht, Wt) = target.size()
@@ -19,4 +19,7 @@ class Loss(object):
                                   align_corners=True)
         _input = input.transpose(1, 2).transpose(2, 3).contiguous().view(-1, C)
         _target = target.view(-1)
-        return F.cross_entropy(_input, _target, ignore_index=250)
+        return F.cross_entropy(_input,
+                               _target,
+                               size_average=avg,
+                               ignore_index=250)

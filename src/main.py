@@ -42,7 +42,7 @@ def train(model: nn.Module, dataset: Dataset,
             outputs = model(images)['out']
             output_mask = outputs.argmax(1)
 
-            batch_loss = Loss.cross_entropy2D(outputs, target)
+            batch_loss = Loss.cross_entropy2D(outputs, target, False)
             total_loss += batch_loss.item()
             overall_loss = total_loss / ((batch_idx + 1))
             evaluation.update(output_mask, target)
@@ -106,7 +106,10 @@ def evaluate(model: nn.Module,
 
 def main():
     model = config.MODEL
-    augmentation = [torchvision.transforms.ColorJitter(0.25, 0.25, 0.25, 0.25)]
+    augmentation = [
+        torchvision.transforms.ColorJitter(0.25, 0.25, 0.25, 0.25),
+        torchvision.transforms.RandomGrayscale(0.1)
+    ]
     paired_augmentation = ["crop", "hflip", "vflip", "rotate"]
 
     dataset = config.DATASET(task=config.TRAIN,
