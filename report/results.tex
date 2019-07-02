@@ -1,2 +1,59 @@
-\section{Results}
+\section{Training and Results}
+The metric that we use to evaluate our models is the F1 score.
+
+\subsection{Baseline models} \label{subsec:training-baselines}
+We trained our baseline models from scratch. After extracting the patches and corresponding labels we had $62500$ training data points. We tried data augmentation procedures such as rotations and adding noise, but these procedures did not help in this case. We use Adam with a $0.001$ learning rate and no decay as our optimizer. The batch size is fixed at $32$.
+
+One important property of our data is class imbalance. We have roughly $3$ times more background patches than road patches. In the current literature, there are two common ways to solve this issue, modifying the training dataset or using weighted loss functions. We opted for the latter and used weighted binary cross-entropy as our loss function.
+
+These models always achieved the best results within the first 10 epochs of training. The simpler baseline model managed to score 0.79 on the test set. The better baseline model scored 0.84 when no post-processing was applied. When SVM post-processing was applied, we achieved a slightly increased score of 0.85. A summary of these finding can be found in \autoref{tab:baseline-results}.
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|}
+        \hline
+        \textbf{Model} & \textbf{F1 score} \\
+        \hline
+        \hline
+        Simple Baseline (no augmentation) & 0.79 \\
+        \hline
+        Simple Baseline (with augmentation) & 0.79 \\
+        \hline
+        Better Baseline (no post-processing) & 0.84 \\
+        \hline
+        Better Baseline (SVM post-processing) & 0.85 \\
+        \hline
+    \end{tabular}
+    \caption{F1 score of the various baseline models.}
+    \label{tab:baseline-results}
+\end{table}
+
+\subsection{Fully convolutional neural networks} \label{subsec:training-fcn}
+The models used for this part are pre-trained on the ImageNet dataset. We tried training the VGG based models from scratch, but this resulted in significantly lower scores. For this type of models we have only 100 images available so data augmentation was essential. The optimizer choice was Adam with a learning rate of $0.001$ and no weight decay. The batch size is fixed at $16$ for Unet and only $2$ for the FCN base models (because of GPU memory limitations).
+
+As we did in \autoref{subsec:training-baselines}, we use the loss function to combat class imbalance. We experimented with weighted/unweighted binary cross entropy and the Jaccard loss. However, we found that the type of loss did not affect the prediction quality. Here we report only the results obtained by using binary cross entropy.
+
+We trained these types of models for 125 epochs. The Unet(VGG) model trained from scratch managed to score 0.85 on the test set and 0.87 when using a pre-trained model. When using the Unet(ResNet) pre-trained model we could achieve a score of 0.89. The best performer was our FCN(ResNet) pre-trained model that achieved a score of 0.90 on the test set. A summary of these finding can be found in \autoref{tab:fcn-results}.
+
+The variant of ResNet that we used was the 101 layer one. We experiment with the 34 or 50 layer networks, but found that the performance gain by using deeper networks was worth the extra training time.
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+        \hline
+        \textbf{Model} & \textbf{Backbone} & \textbf{Pretrained} & \textbf{F1 score} \\
+        \hline
+        \hline
+        Unet & VGG & No & 0.84 \\
+        \hline
+        Unet & VGG & Yes & 0.87 \\
+        \hline
+        Unet & ResNet & Yes & 0.89 \\
+        \hline
+        FCN & ResNet & Yes & 0.90 \\
+        \hline
+    \end{tabular}
+    \caption{F1 score of the various fully convolutional networks.}
+    \label{tab:fcn-results}
+\end{table}
 

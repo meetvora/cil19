@@ -1,2 +1,10 @@
 \section{Discussion}
+The baseline CNN model is by far the worst model for this task. The $16 \times 16$ patches used with this architecture contain far to little information to make an educated guess. This is true even for the trained human eye.
 
+Using $64 \times 64$ patches as we did in our second baseline model helped a tremendous amount. The larger patch size provides the model more context. This modification alone, brings the performance on par with basic fully convolutional architectures.
+
+Post-processing the input, weather with an SVN or a CNN helped but not significantly. We noticed that improvements of the initial predicting model impacted the performance of the post-processing model, but not vice-versa.
+
+Fully convolutional architectures proved to be much more powerful than traditional CNN approaches. Even though we are not directly optimizing patch label prediction, better per pixel label prediction led to a better patch label prediction. As for the network type, Unet or FCN, we see very similar results at the high end and further data is needed to make a thorough comparison.
+
+Pre-trained networks on much bigger datasets, such as ImageNet, significantly improved performance. These networks allowed us to use much deeper architectures, like the 101 layer ResNet, which would have been impossible to train with our tiny dataset.
