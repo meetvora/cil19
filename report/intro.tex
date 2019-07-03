@@ -11,8 +11,13 @@ A major hurdle is automating the process of identifying different features from
 raw data so that the information can be used to enrich existing maps. Hence,
 there has been considerable interest in pixel-wise labelling of aerial images.
 
-In this report we restrict ourselves to binary (road or background) per-pixel
-labelling of RGB images in a data set obtained from GoogleMaps. We include a
-short survey of state-of-the-art in labelling of aerial images in Section
-\ref{sec:related}, after which we describe our solution to the specified task.
+In this report, we restrict ourselves to the specified task. In particular, we
+have a hundred $400\times400$ RBG images from GoogleMaps with each pixel
+labelled as road (1) or background (0). The goal is to train a classifier which
+can annotate a label (road or background) to each pixel in a given image. The
+classifier is then evaluated on the basis of prediction accuracy measured over
+$16\times16$ patches of test images.
+
+We include a short survey of state-of-the-art in labelling of aerial images in
+Section \ref{sec:related}, before describing our solution.
 

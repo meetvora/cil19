@@ -27,7 +27,7 @@ These patches are used to train a convolutional neural network. The exact archit
 \end{table}
 
 \subsection{Better Baseline} \label{subsec:better-baseline}
-Here we borrow form the ideas presented in \cite{Mni10}. We use a much bigger patch of size $64 \times 64$ to predict the middle $16 \times 16$ patch. This gives our model more information and hence a better prediction is expected. Similarly to \autoref{subsec:baseline}, we split each image in disjoint patches of size $64 \times 64$, using $0$ padding on the edges. Image patch normalization, mask patch extraction and label computation are identical to what we did in \autoref{subsec:baseline}.
+Here we borrow from the ideas presented in \cite{Mni10}. We use a much bigger patch of size $64 \times 64$ to predict the middle $16 \times 16$ patch. This gives our model more information and hence a better prediction is expected. Similarly to \autoref{subsec:baseline}, we split each image in disjoint patches of size $64 \times 64$, using $0$ padding on the edges. Image patch normalization, mask patch extraction and label computation are identical to what we did in \autoref{subsec:baseline}.
 
 To predict the labels, we use a convolutional neural network. The exact architecture is described in \autoref{tab:better-baseline}.
 

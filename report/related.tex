@@ -1,3 +1,31 @@
 \section{Related Work}
 \label{sec:related}
 
+% traditional approaches (eg. edge detection)
+
+% vgg, resnet
+Deep learning solutions have been state of the art in image analysis tasks
+since 2012 \cite{Kri12}. VGG nets \cite{Zis14} and ResNets \cite{He15} are
+network architectures which benefit from multiple layers stacked successively
+learning increasingly abstract features from input images. While ResNets can be
+$8\times$ deeper than VGG nets, the key idea which counters problems such as
+vanishing/exploding gradients associated with increasing depth is the ``skip
+connection''
+
+\citeauthor{Lon14}\cite{Lon14} developed fully convolutional networks (FCN) as
+an extension to CNNs to perform semantic segmentation which have become the
+de-facto standard in semantic egmentation. Combinations of FCNs with VGG nets
+and ResNets have also been used to address segmentation in aerial images
+\cite{Mar16} \cite{kai17} \cite{Azi18}.
+
+U-Net is another network architecture built on top of FCNs. The main
+characteristic of U-Net is the symmetric contracting (downsampling) and
+expansive (upsampling) path composed with ``skip connections'' which
+concatenate features from downsampling path to the equivalent upsampling
+layers. A significant advantage of U-Net is less dependence on huge amounts of
+data in contrast to other data hungry networks.  Though originally developed
+for segmentation task in biomedical imaging, these have been used for automatic
+road detection \cite{Zha17} \cite{Guo18}.
+
+% bittel et al, coretin et. al. - address slightly different problems
+
