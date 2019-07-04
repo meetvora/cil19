@@ -1,0 +1,5 @@
+numpy
+keras
+scikit-learn
+segmentation-models
+opencv-python
