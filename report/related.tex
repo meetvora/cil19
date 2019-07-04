@@ -27,5 +27,12 @@ data in contrast to other data hungry networks.  Though originally developed
 for segmentation task in biomedical imaging, these have been used for automatic
 road detection \cite{Zha17} \cite{Guo18}.
 
+Amongst the most recent models proposed for semantic segmentation, DeepLabV3
+\cite{Che17} has shown promising results. DeepLab proposes to use atrous convolutions,
+which help us maximize the field of view for any given kernel without increasing
+the number of parameters. Using atrous convolutions, the model is able to extract
+output features at different output strides during training and evaluation, which
+efficiently enables training with batch normalization.
+
 % bittel et al, coretin et. al. - address slightly different problems
 
