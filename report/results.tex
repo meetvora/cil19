@@ -31,7 +31,7 @@ These models always achieved the best results within the first 10 epochs of trai
 \subsection{Fully convolutional neural networks} \label{subsec:training-fcn}
 The models used for this part are pre-trained on the ImageNet dataset. We tried training the VGG based models from scratch, but this resulted in significantly lower scores. For this type of models we have only 100 images available so data augmentation was essential. The optimizer choice was Adam with a learning rate of $0.001$ and no weight decay. The batch size is fixed at $16$ for Unet and only $2$ for the FCN base models (because of GPU memory limitations).
 
-As we did in \autoref{subsec:training-baselines}, we use the loss function to combat class imbalance. We experimented with weighted/unweighted binary cross entropy and the Jaccard loss. However, we found that the type of loss did not affect the prediction quality. Here we report only the results obtained by using binary cross entropy.
+As we did in \autoref{subsec:training-baselines}, we use the loss function to combat class imbalance. We experimented with weighted/unweighted binary cross entropy and the Jaccard loss. However, we found that the type of loss did not affect the prediction quality. Here we report only the results obtained by using binary cross-entropy.
 
 We trained these types of models for 125 epochs. The Unet(VGG) model trained from scratch managed to score 0.85 on the test set and 0.87 when using a pre-trained model. When using the Unet(ResNet) pre-trained model we could achieve a score of 0.89. The best performer was our FCN(ResNet) pre-trained model that achieved a score of 0.90 on the test set. A summary of these finding can be found in \autoref{tab:fcn-results}.
 

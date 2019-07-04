@@ -3,9 +3,15 @@
 %\usepackage{times}
 %\usepackage{balance}
 \usepackage{hyperref}
+
 \usepackage{graphicx}	% For figure environment
+\graphicspath{{./images/}}
+
 \usepackage[numbers]{natbib}
 
+\usepackage{caption}
+\captionsetup[table]{labelfont=bf, labelsep=period}
+\captionsetup[figure]{labelfont=bf, labelsep=period}
 
 \begin{document}
 \title{Road Segmentation}
@@ -27,13 +33,6 @@
 \input{results}
 \input{discussion}
 \input{summary}
-
-\textbf{TODO: Attach Declaration of originality}
-\url{http://da.inf.ethz.ch/teaching/2019/CIL/material/Declaration-Originality.pdf}
-
-% \section*{Acknowledgements}
-% The author thanks Christian Sigg for his careful reading and helpful
-% suggestions.
 
 \bibliographystyle{IEEEtranN}
 \bibliography{bibliography}
