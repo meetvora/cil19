@@ -19,9 +19,9 @@ These models always achieved the best results within the first 10 epochs of trai
         \hline
         Simple Baseline (with augmentation) & 0.79 \\
         \hline
-        Better Baseline (no post-processing) & 0.84 \\
+        Improved Baseline (no post-processing) & 0.84 \\
         \hline
-        Better Baseline (SVM post-processing) & 0.85 \\
+        Improved Baseline (SVM post-processing) & 0.85 \\
         \hline
     \end{tabular}
     \caption{F1 score of the various baseline models.}
@@ -29,13 +29,17 @@ These models always achieved the best results within the first 10 epochs of trai
 \end{table}
 
 \subsection{Fully convolutional neural networks} \label{subsec:training-fcn}
-The models used for this part are pre-trained on the ImageNet dataset. We tried training the VGG based models from scratch, but this resulted in significantly lower scores. For this type of models we have only 100 images available so data augmentation was essential. The optimizer choice was Adam with a learning rate of $0.001$ and no weight decay. The batch size is fixed at $16$ for Unet and only $2$ for the FCN base models (because of GPU memory limitations).
+The models used for this part are pre-trained on the ImageNet \& MS-COCO dataset. We attempted to train VGG based models from scratch, but this resulted in significantly lower scores. For this type of models we have only 100 images available so data augmentation was essential. The optimizer choice was Adam with a learning rate of $0.001$ and no weight decay. The batch size is fixed at $16$ for UNet and only $2$ for the FCN base models (because of GPU memory limitations).
 
 As we did in \autoref{subsec:training-baselines}, we use the loss function to combat class imbalance. We experimented with weighted/unweighted binary cross entropy and the Jaccard loss. However, we found that the type of loss did not affect the prediction quality. Here we report only the results obtained by using binary cross-entropy.
 
-We trained these types of models for 125 epochs. The Unet(VGG) model trained from scratch managed to score 0.85 on the test set and 0.87 when using a pre-trained model. When using the Unet(ResNet) pre-trained model we could achieve a score of 0.89. The best performer was our FCN(ResNet) pre-trained model that achieved a score of 0.90 on the test set. A summary of these finding can be found in \autoref{tab:fcn-results}.
+We train these models for 125 epochs each. The UNet (VGG) model trained from-scratch managed to score 0.85 on the test set and 0.87 when using a pre-trained model. When using a pre-trained UNet (ResNet) model we were able to achieve an F1 score of 0.89. Our FCN (ResNet) pre-trained on MS-COCO achieved a score of 0.904 on the test set. We achieve similar scores with DeepLabv3 (0.902) and ensemble (0.904) as well. A summary of these finding can be found in \autoref{tab:fcn-results}.
+Surprisingly, we see that using Deeplabv3 in our setup doesn't improve our score. We hypothesize that complexity of the model (in comparision to FCN) is a factor responsible for the slight underperformance. With limited data, we expect simpler models to train easily, which is not the case with Deeplabv3. 
 
-The variant of ResNet that we used was the 101 layer one. We experiment with the 34 or 50 layer networks, but found that the performance gain by using deeper networks was worth the extra training time.
+We also see that our ensemble model slightly outperforms DeepLabV3 but again slightly underperforms in comparision to our FCN implementation. We again attribute this to the increased complexity of the model.
+
+The variant of ResNet used throughout was the 101 layer one. We experiment with  34 or 50 layer networks, but found that the performance gain by using deeper networks was worth the extra training time.
+
 
 \begin{table}[h]
     \centering
@@ -44,13 +48,17 @@ The variant of ResNet that we used was the 101 layer one. We experiment with the
         \textbf{Model} & \textbf{Backbone} & \textbf{Pretrained} & \textbf{F1 score} \\
         \hline
         \hline
-        Unet & VGG & No & 0.84 \\
+        Unet & VGG & No & 0.843 \\
         \hline
-        Unet & VGG & Yes & 0.87 \\
+        Unet & VGG & Yes & 0.871 \\
         \hline
-        Unet & ResNet & Yes & 0.89 \\
+        Unet & ResNet & Yes & 0.892 \\
         \hline
-        FCN & ResNet & Yes & 0.90 \\
+        FCN & ResNet & Yes & 0.905 \\
+        \hline
+        DeepLabv3 & ResNet & Yes & 0.902 \\
+        \hline
+        Ensemble (FCN + DeepLabv3) & ResNet & Yes & 0.904 \\
         \hline
     \end{tabular}
     \caption{F1 score of the various fully convolutional networks.}
